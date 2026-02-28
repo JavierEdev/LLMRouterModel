@@ -8,7 +8,7 @@ import type { IFlowService } from "./IFlowService.ts";
 export class FlowService implements IFlowService {
   constructor(private store: IFlowStoreFs) {}
 
-  async saveNew(flow: Flow): Promise<{ flow_id: string }> {
+  async saveNew(flow: Flow): Promise<string> {
     const errors = validateFlow(flow);
     if (errors.length) {
       throw new ValidationError(errors, "Flow inválido");
@@ -16,7 +16,7 @@ export class FlowService implements IFlowService {
 
     const flowId = uuidv4();
     await this.store.saveAs(flowId, flow);
-    return { flow_id: flowId };
+    return flowId;
   }
 
   async get(flowId: string) {

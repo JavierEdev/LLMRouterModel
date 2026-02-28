@@ -4,6 +4,7 @@ import type { IFlowService } from "./IFlowService.ts";
 import type { IConversationStore } from "../../infrastructure/stores/IConversationStoreMemory.ts";
 import type { ContentMsg } from "../../domain/chat.ts";
 import { NotFoundError } from "../errors/NotFoundError.ts";
+import { ValidationError } from "../errors/ValidationError.ts";
 import type { IFlowRunner } from "../runner/IFlowRunner.ts";
 
 const MAX_HISTORY = 16;
@@ -22,11 +23,26 @@ export class ChatService implements IChatService {
 
     const prevHistory = tail(this.conversations.get(input.conversationId), MAX_HISTORY);
 
-    const result = await this.runner.runOnce({
-      flow,
-      history: prevHistory,
-      userText: input.message,
-    });
+    let result: Awaited<ReturnType<IFlowRunner["runOnce"]>>;
+    try {
+      result = await this.runner.runOnce({
+        flow,
+        history: prevHistory,
+        userText: input.message,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (
+        message.includes("Start node") ||
+        message.includes("start debe ser router_llm") ||
+        message.includes("No se pudo resolver el next node") ||
+        message.includes("Next node") ||
+        message.includes("next node debe ser agent")
+      ) {
+        throw new ValidationError([message], "Flow inválido para ejecutar chat");
+      }
+      throw err;
+    }
 
     this.conversations.append(input.conversationId, { role: "user", parts: [{ text: input.message }] });
     this.conversations.append(input.conversationId, { role: "model", parts: [{ text: result.reply }] });

@@ -1,13 +1,13 @@
-import type { FlowEdge, FlowNode, Intent } from "./flow.ts";
+import type { FlowEdge, FlowNode } from "./flow.ts";
 import type { ContentMsg } from "./chat.ts";
 import type { IllmClient } from "../infrastructure/llm/IllClient.ts";
 
 
-export type RouterOut = { intent: Intent; confidence: number; raw: string };
+export type RouterOut = { intent: string; confidence: number; raw: string };
 
 export type PickNextArgs = {
   edges: FlowEdge[] | undefined;
-  routerOut: { intent: Intent; confidence: number };
+  routerOut: { intent: string; confidence: number };
   threshold: number;
 };
 

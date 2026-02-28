@@ -1,4 +1,4 @@
-import type { Flow, FlowNode, FlowEdge, Intent } from "../../domain/flow.ts";
+import type { Flow, FlowNode, FlowEdge } from "../../domain/flow.ts";
 import type { ContentMsg } from "../../domain/chat.ts";
 import type { IllmClient } from "../../infrastructure/llm/IllClient.ts";
 import type {
@@ -13,8 +13,8 @@ export class FlowRunner implements IFlowRunner {
   constructor(private llm: IllmClient) {}
 
   async runOnce(args: {
-    flow: any;     // si querés, tipalo Flow
-    history: any;  // ContentMsg[]
+    flow: any;
+    history: any;
     userText: string;
   }): Promise<FlowRunResult> {
     return runFlowOnce({
@@ -47,21 +47,25 @@ function indexFlow(flow: Flow) {
   return { nodes, edgesBySource };
 }
 
+function normalizeIntent(value: string) {
+  return value.trim().toLowerCase();
+}
+
 async function runRouter({ llm, node, userText }: RunRouterArgs): Promise<RouterOut> {
   const raw = await llm.generate(node.data.model, node.data.system, [
     { role: "user", parts: [{ text: userText }] },
   ]);
 
   const parsed = extractJsonObject(raw);
-  const intent = parsed?.intent as Intent;
+  const intent =
+    typeof parsed?.intent === "string" && parsed.intent.trim().length > 0
+      ? parsed.intent.trim()
+      : "other";
   const confidence = Number(parsed?.confidence);
-
-  const okIntent =
-    intent === "sales" || intent === "support" || intent === "other";
   const okConf = Number.isFinite(confidence);
 
   return {
-    intent: okIntent ? intent : "other",
+    intent: normalizeIntent(intent),
     confidence: okConf ? Math.max(0, Math.min(1, confidence)) : 0,
     raw,
   };
@@ -76,7 +80,7 @@ function pickNext({ edges, routerOut, threshold }: PickNextArgs) {
 
     if (
       w.intent &&
-      w.intent === routerOut.intent &&
+      normalizeIntent(w.intent) === routerOut.intent &&
       routerOut.confidence >= min &&
       routerOut.confidence >= threshold
     ) {
@@ -85,7 +89,14 @@ function pickNext({ edges, routerOut, threshold }: PickNextArgs) {
   }
 
   const def = edges.find((e) => e.when?.default === true);
-  return def?.target ?? null;
+  if (def?.target) return def.target;
+
+  // Fallback: edge sin condición explícita.
+  const unconditional = edges.find((e) => {
+    const w = e.when ?? {};
+    return !w.default && !w.intent;
+  });
+  return unconditional?.target ?? null;
 }
 
 async function runAgent({ llm, node, history, userText }: RunAgentArgs) {
@@ -125,7 +136,11 @@ export async function runFlowOnce(args: {
     routerOut: { intent: routerOut.intent, confidence: routerOut.confidence },
     threshold: startNode.data.threshold,
   });
-  if (!nextId) throw new Error("No se pudo resolver el next node desde router");
+  if (!nextId) {
+    throw new Error(
+      "No se pudo resolver el next node desde router. Agrega un edge con intent, default o sin condicion.",
+    );
+  }
 
   const nextNode = nodes.get(nextId);
   if (!nextNode) throw new Error(`Next node '${nextId}' no existe`);

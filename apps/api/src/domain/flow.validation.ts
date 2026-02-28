@@ -1,5 +1,4 @@
 import type { Flow } from "./flow.ts";
-import { isIntent } from "./intent.ts";
 
 type Errors = string[];
 
@@ -60,7 +59,11 @@ export function validateFlow(flow: Flow): string[] {
     pushIf(errors, !nodeIds.has(e.target), `edge.target no existe: ${e.target}`);
 
     const w = e.when ?? {};
-    pushIf(errors, w.intent != null && !isIntent(w.intent), `edge.when.intent inválido: ${String(w.intent)}`);
+    pushIf(
+      errors,
+      w.intent != null && !isNonEmptyString(w.intent),
+      `edge.when.intent inválido: ${String(w.intent)}`,
+    );
     pushIf(errors, w.min_confidence != null && !isNumber01(w.min_confidence), "edge.when.min_confidence debe estar entre 0 y 1");
     pushIf(errors, w.default != null && typeof w.default !== "boolean", "edge.when.default debe ser boolean");
   }

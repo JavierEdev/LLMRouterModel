@@ -1,5 +1,3 @@
-export type Intent = "sales" | "support" | "other";
-
 export type Flow = {
   start: string;
   nodes: FlowNode[];
@@ -22,7 +20,7 @@ export type FlowEdge = {
   source: string;
   target: string;
   when: {
-    intent?: Intent;
+    intent?: string;
     min_confidence?: number;
     default?: boolean;
   };
