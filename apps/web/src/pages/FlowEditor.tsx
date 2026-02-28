@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type SetStateAction } from "react";
 import {
   ReactFlow,
   Background,
@@ -316,11 +316,11 @@ export default function FlowEditor() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeClick={(_, node) => {
+          onNodeClick={(_: any, node: { id: SetStateAction<string | null>; }) => {
             setSelectedNodeId(node.id);
             setSelectedEdgeId(null);
           }}
-          onEdgeClick={(_, edge) => {
+          onEdgeClick={(_: any, edge: { id: SetStateAction<string | null>; }) => {
             setSelectedEdgeId(edge.id);
             setSelectedNodeId(null);
           }}
@@ -529,7 +529,7 @@ export default function FlowEditor() {
             ) : (
               chatHistory.map((line, idx) => (
                 <div key={`${line.role}-${idx}`} style={{ marginBottom: 8 }}>
-                  <strong>{line.role === "user" ? "Vos" : "Bot"}:</strong>{" "}
+                  <strong>{line.role === "user" ? "Tu" : "Bot"}:</strong>{" "}
                   {line.text}
                 </div>
               ))

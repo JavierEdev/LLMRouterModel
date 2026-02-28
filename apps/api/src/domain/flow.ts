@@ -19,7 +19,7 @@ export type FlowNode =
 export type FlowEdge = {
   source: string;
   target: string;
-  when: {
+  when?: {
     intent?: string;
     min_confidence?: number;
     default?: boolean;

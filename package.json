@@ -12,5 +12,12 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "@langchain/community": "^1.1.20",
+    "@langchain/core": "^1.1.29",
+    "@langchain/openai": "^1.2.11",
+    "@supabase/supabase-js": "^2.98.0",
+    "langchain": "^1.2.28"
   }
 }

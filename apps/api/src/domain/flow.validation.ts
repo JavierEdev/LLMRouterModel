@@ -69,13 +69,28 @@ export function validateFlow(flow: Flow): string[] {
   }
 
   const defaultCountBySource = new Map<string, number>();
+  const unconditionalCountBySource = new Map<string, number>();
   for (const e of edges) {
-    if (e.when?.default === true) {
+    const w = e.when ?? {};
+    if (w.default === true) {
       defaultCountBySource.set(e.source, (defaultCountBySource.get(e.source) ?? 0) + 1);
+      continue;
+    }
+
+    if (!isNonEmptyString(w.intent)) {
+      unconditionalCountBySource.set(e.source, (unconditionalCountBySource.get(e.source) ?? 0) + 1);
     }
   }
+
   for (const [src, count] of defaultCountBySource.entries()) {
     pushIf(errors, count > 1, `solo se permite 1 edge default por source (${src})`);
+  }
+  for (const [src, count] of unconditionalCountBySource.entries()) {
+    pushIf(
+      errors,
+      count > 1,
+      `solo se permite 1 edge sin condicion por source (${src}). Agrega when.intent o when.default`,
+    );
   }
 
   return errors;
